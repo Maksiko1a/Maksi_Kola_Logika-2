@@ -9,16 +9,22 @@ fire_sound = mixer.Sound('fire.ogg')
  
 # шрифти і написи 
 font.init() 
+font1 = font.Font(None, 80)  # шрифт для зображення рахунку збитих пропущених кораблів 
 font2 = font.Font(None, 36) 
+win = font1.render("YOU WIN!" , True, (255,255,255)) 
+lose = font1.render("YOU LOSE!" , True, (180,0,0)) 
+ 
  
 # нам потрібні такі картинки: 
 img_back = "galaxy.jpg"  # фон гри 
 img_hero = "rocket.png"  # герой 
 img_enemy = "ufo.png"  # ворог 
+img_bullet = "bullet.png" # куля  
+ 
  
 score = 0  # збито кораблів 
 lost = 0  # пропущено кораблів 
- 
+max_lost = 3 
 # клас-батько для інших спрайтів 
 class GameSprite(sprite.Sprite): 
     # конструктор класу 
@@ -51,7 +57,8 @@ class Player(GameSprite):
  
     # метод "постріл" (використовуємо місце гравця, щоб створити там кулю) 
     def fire(self): 
-        pass  # Реалізуйте метод для пострілу 
+        bullet = Bullet(img_bullet, self.rect.centerx, self.rect.top, 15,20,-15) 
+        bullets.add(bullet)  # Реалізуйте метод для пострілу 
  
 # клас спрайта-ворога 
 class Enemy(GameSprite): 
@@ -64,6 +71,14 @@ class Enemy(GameSprite):
             self.rect.x = randint(80, win_width - 80) 
             self.rect.y = 0 
             lost += 1 
+ 
+class Bullet(GameSprite): 
+    def update(self): 
+        self.rect.y += self.speed 
+        # зникає, якщо дійде до краю екрана 
+        if self.rect.y < 0: 
+            self.kill() 
+ 
  
 # створюємо віконце 
 win_width = 700 
@@ -80,6 +95,8 @@ for i in range(1, 6):
     monster = Enemy(img_enemy, randint(80, win_width - 80), -40, 80, 50, randint(1, 5)) 
     monsters.add(monster) 
  
+bullets = sprite.Group() 
+ 
 # змінна "гра закінчилася": як тільки вона стає True, в основному циклі перестають працювати спрайти 
 finish = False 
  
@@ -91,6 +108,10 @@ while run:
     for e in event.get(): 
         if e.type == QUIT: 
             run = False 
+        elif e.type == KEYDOWN: 
+            if e.key == K_SPACE: 
+                ship.fire() 
+                fire_sound.play() 
  
     if not finish: 
         # оновлюємо фон 
@@ -107,10 +128,12 @@ while run:
         ship.update() 
         for monster in monsters: 
             monster.update()  # Оновлюємо кожного ворога окремо 
+        bullets.update() 
  
         # оновлюємо їх у новому місці при кожній ітерації циклу 
         ship.reset() 
         monsters.draw(window)  # Малюємо всіх ворогів 
+        bullets.draw(window) # Малюємо пулі
  
         display.update() 
     # цикл спрацьовує кожні 0.05 секунд 
